@@ -95,6 +95,580 @@ impl Board {
         }
     }
 
+    // get all valid moves for a piece
+    fn all_moves(&self, pos: Position) -> Vec<Position> {
+        let pair = self[pos.0][pos.1].clone().expect("Piece must be present");
+
+        enum piece_match {
+            None,
+            Same,
+            Different,
+        }
+
+        let checker = |pos: Position| -> piece_match {
+            match &self[pos.0][pos.1] {
+                Some(p) => {
+                    if pair.kind == p.kind {
+                        piece_match::Same
+                    } else {
+                        piece_match::Different
+                    }
+                }
+                None => piece_match::None,
+            }
+        };
+
+        match pair.piece {
+            Piece::Rook => {
+                let mut moves = Vec::new();
+
+                // rook can move in four directions
+                // up
+                for i in (0..pos.0).rev() {
+                    let p = (i, pos.1);
+                    match checker(p) {
+                        piece_match::None => moves.push(p),
+                        piece_match::Different => {
+                            moves.push(p);
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // down
+                for i in pos.0 + 1..8 {
+                    let p = (i, pos.1);
+                    match checker(p) {
+                        piece_match::None => moves.push(p),
+                        piece_match::Different => {
+                            moves.push(p);
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // left
+                for i in (0..pos.1).rev() {
+                    let p = (pos.0, i);
+                    match checker(p) {
+                        piece_match::None => moves.push(p),
+                        piece_match::Different => {
+                            moves.push(p);
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // right
+                for i in pos.1 + 1..8 {
+                    let p = (pos.0, i);
+                    match checker(p) {
+                        piece_match::None => moves.push(p),
+                        piece_match::Different => {
+                            moves.push(p);
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                moves
+            }
+            Piece::Knight => {
+                // knight moves in L shape, 2 steps in one direction and 1 to the side
+                let mut moves = Vec::new();
+
+                // up
+                if pos.0 > 1 {
+                    // left
+                    if pos.1 > 0 {
+                        let p = (pos.0 - 2, pos.1 - 1);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+
+                    // right
+                    if pos.1 < 7 {
+                        let p = (pos.0 - 2, pos.1 + 1);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+                }
+
+                // down
+                if pos.0 < 6 {
+                    // left
+                    if pos.1 > 0 {
+                        let p = (pos.0 + 2, pos.1 - 1);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+
+                    // right
+                    if pos.1 < 7 {
+                        let p = (pos.0 + 2, pos.1 + 1);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+                }
+
+                // left
+                if pos.1 > 1 {
+                    // up
+                    if pos.0 > 0 {
+                        let p = (pos.0 - 1, pos.1 - 2);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+
+                    // down
+                    if pos.0 < 7 {
+                        let p = (pos.0 + 1, pos.1 - 2);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+                }
+
+                // right
+                if pos.1 < 6 {
+                    // up
+                    if pos.0 > 0 {
+                        let p = (pos.0 - 1, pos.1 + 2);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+
+                    // down
+                    if pos.0 < 7 {
+                        let p = (pos.0 + 1, pos.1 + 2);
+                        match checker(p) {
+                            piece_match::None => moves.push(p),
+                            piece_match::Different => moves.push(p),
+                            piece_match::Same => (),
+                        }
+                    }
+                }
+
+                return moves;
+            }
+            Piece::Bishop => {
+                let mut moves = Vec::new();
+
+                // bishop can move in four directions
+                // up left
+                for i in (0..pos.0).rev() {
+                    let p1: i32 = pos.1.try_into().unwrap();
+                    let p0: i32 = pos.0.try_into().unwrap();
+                    let j = p1 - (p0 - i as i32);
+                    if j < 0 {
+                        break;
+                    }
+
+                    match checker((i, j as usize)) {
+                        piece_match::None => moves.push((i, j as usize)),
+                        piece_match::Different => {
+                            moves.push((i, j as usize));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // up right
+                for i in (0..pos.0).rev() {
+                    let j = pos.1 + (pos.0 - i);
+                    if j > 7 {
+                        break;
+                    }
+                    match checker((i, j)) {
+                        piece_match::None => moves.push((i, j)),
+                        piece_match::Different => {
+                            moves.push((i, j));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // down left
+                for i in (pos.0 + 1)..8 {
+                    let p1: i32 = pos.1.try_into().unwrap();
+                    let p0: i32 = pos.0.try_into().unwrap();
+
+                    let j = p1 - (i as i32 - p0);
+                    if j < 0 {
+                        break;
+                    }
+
+                    match checker((i, j as usize)) {
+                        piece_match::None => moves.push((i, j as usize)),
+                        piece_match::Different => {
+                            moves.push((i, j as usize));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // down right
+                for i in pos.0 + 1..8 {
+                    let j = pos.1 + (i - pos.0);
+                    if j > 7 {
+                        break;
+                    }
+
+                    match checker((i, j)) {
+                        piece_match::None => moves.push((i, j)),
+                        piece_match::Different => {
+                            moves.push((i, j));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                moves
+            }
+            Piece::Queen => {
+                let mut moves = Vec::new();
+
+                // queen can move in eight directions
+                // up
+                for i in (0..pos.0).rev() {
+                    match checker((i, pos.1)) {
+                        piece_match::None => moves.push((i, pos.1)),
+                        piece_match::Different => {
+                            moves.push((i, pos.1));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // down
+                for i in pos.0 + 1..8 {
+                    match checker((i, pos.1)) {
+                        piece_match::None => moves.push((i, pos.1)),
+                        piece_match::Different => {
+                            moves.push((i, pos.1));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // left
+                for i in (0..pos.1).rev() {
+                    match checker((pos.0, i)) {
+                        piece_match::None => moves.push((pos.0, i)),
+                        piece_match::Different => {
+                            moves.push((pos.0, i));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // right
+                for i in pos.1 + 1..8 {
+                    match checker((pos.0, i)) {
+                        piece_match::None => moves.push((pos.0, i)),
+                        piece_match::Different => {
+                            moves.push((pos.0, i));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // up left
+                for i in (0..pos.0).rev() {
+                    let p1: i32 = pos.1.try_into().unwrap();
+                    let p0: i32 = pos.0.try_into().unwrap();
+                    let j = p1 - (p0 - i as i32);
+                    if j < 0 {
+                        break;
+                    }
+
+                    match checker((i, j as usize)) {
+                        piece_match::None => moves.push((i, j as usize)),
+                        piece_match::Different => {
+                            moves.push((i, j as usize));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // up right
+                for i in (0..pos.0).rev() {
+                    let j = pos.1 + (pos.0 - i);
+                    if j > 7 {
+                        break;
+                    }
+                    match checker((i, j)) {
+                        piece_match::None => moves.push((i, j)),
+                        piece_match::Different => {
+                            moves.push((i, j));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // down left
+                for i in (pos.0 + 1)..8 {
+                    let p1: i32 = pos.1.try_into().unwrap();
+                    let p0: i32 = pos.0.try_into().unwrap();
+
+                    let j = p1 - (i as i32 - p0);
+                    if j < 0 {
+                        break;
+                    }
+
+                    match checker((i, j as usize)) {
+                        piece_match::None => moves.push((i, j as usize)),
+                        piece_match::Different => {
+                            moves.push((i, j as usize));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                // down right
+                for i in pos.0 + 1..8 {
+                    let j = pos.1 + (i - pos.0);
+                    if j > 7 {
+                        break;
+                    }
+
+                    match checker((i, j)) {
+                        piece_match::None => moves.push((i, j)),
+                        piece_match::Different => {
+                            moves.push((i, j));
+                            break;
+                        }
+                        piece_match::Same => break,
+                    }
+                }
+
+                moves
+            }
+            Piece::King => {
+                let mut moves = Vec::new();
+
+                // king can move in eight directions
+                // up
+                if pos.0 > 0 {
+                    match checker((pos.0 - 1, pos.1)) {
+                        piece_match::None => moves.push((pos.0 - 1, pos.1)),
+                        piece_match::Different => moves.push((pos.0 - 1, pos.1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                // down
+                if pos.0 < 7 {
+                    match checker((pos.0 + 1, pos.1)) {
+                        piece_match::None => moves.push((pos.0 + 1, pos.1)),
+                        piece_match::Different => moves.push((pos.0 + 1, pos.1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                // left
+                if pos.1 > 0 {
+                    match checker((pos.0, pos.1 - 1)) {
+                        piece_match::None => moves.push((pos.0, pos.1 - 1)),
+                        piece_match::Different => moves.push((pos.0, pos.1 - 1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                // right
+                if pos.1 < 7 {
+                    match checker((pos.0, pos.1 + 1)) {
+                        piece_match::None => moves.push((pos.0, pos.1 + 1)),
+                        piece_match::Different => moves.push((pos.0, pos.1 + 1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                // up left
+                if pos.0 > 0 && pos.1 > 0 {
+                    match checker((pos.0 - 1, pos.1 - 1)) {
+                        piece_match::None => moves.push((pos.0 - 1, pos.1 - 1)),
+                        piece_match::Different => moves.push((pos.0 - 1, pos.1 - 1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                // up right
+                if pos.0 > 0 && pos.1 < 7 {
+                    match checker((pos.0 - 1, pos.1 + 1)) {
+                        piece_match::None => moves.push((pos.0 - 1, pos.1 + 1)),
+                        piece_match::Different => moves.push((pos.0 - 1, pos.1 + 1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                // down left
+                if pos.0 < 7 && pos.1 > 0 {
+                    match checker((pos.0 + 1, pos.1 - 1)) {
+                        piece_match::None => moves.push((pos.0 + 1, pos.1 - 1)),
+                        piece_match::Different => moves.push((pos.0 + 1, pos.1 - 1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                // down right
+                if pos.0 < 7 && pos.1 < 7 {
+                    match checker((pos.0 + 1, pos.1 + 1)) {
+                        piece_match::None => moves.push((pos.0 + 1, pos.1 + 1)),
+                        piece_match::Different => moves.push((pos.0 + 1, pos.1 + 1)),
+                        piece_match::Same => (),
+                    }
+                }
+
+                moves
+            }
+            Piece::Pawn => {
+                let mut moves = Vec::new();
+
+                match pair.kind {
+                    Kind::White => {
+                        // white pawn can move up
+
+                        // a pawn can move only one square forward
+                        // a pawn can move diagonally forward if there's an enemy on the square
+                        // a pawn can move two squares forward if it hasn't moved yet
+
+                        // up
+                        if pos.0 > 0 {
+                            match checker((pos.0 - 1, pos.1)) {
+                                piece_match::None => moves.push((pos.0 - 1, pos.1)),
+                                piece_match::Different => (),
+                                piece_match::Same => (),
+                            }
+                        }
+
+                        // up left
+                        if pos.0 > 0 && pos.1 > 0 {
+                            match checker((pos.0 - 1, pos.1 - 1)) {
+                                piece_match::None => (),
+                                piece_match::Different => moves.push((pos.0 - 1, pos.1 - 1)),
+                                piece_match::Same => (),
+                            }
+                        }
+
+                        // up right
+                        if pos.0 > 0 && pos.1 < 7 {
+                            match checker((pos.0 - 1, pos.1 + 1)) {
+                                piece_match::None => (),
+                                piece_match::Different => moves.push((pos.0 - 1, pos.1 + 1)),
+                                piece_match::Same => (),
+                            }
+                        }
+
+                        // two squares up
+                        if pos.0 == 6 {
+                            match checker((pos.0 - 2, pos.1)) {
+                                piece_match::None => moves.push((pos.0 - 2, pos.1)),
+                                piece_match::Different => (),
+                                piece_match::Same => (),
+                            }
+                        }
+                    }
+                    Kind::Black => {
+                        // black pawn can move down
+
+                        // a pawn can move only one square forward
+                        // a pawn can move diagonally forward if there's an enemy on the square
+                        // a pawn can move two squares forward if it hasn't moved yet
+
+                        // down
+                        if pos.0 < 7 {
+                            match checker((pos.0 + 1, pos.1)) {
+                                piece_match::None => moves.push((pos.0 + 1, pos.1)),
+                                piece_match::Different => (),
+                                piece_match::Same => (),
+                            }
+                        }
+
+                        // down left
+                        if pos.0 < 7 && pos.1 > 0 {
+                            match checker((pos.0 + 1, pos.1 - 1)) {
+                                piece_match::None => (),
+                                piece_match::Different => moves.push((pos.0 + 1, pos.1 - 1)),
+                                piece_match::Same => (),
+                            }
+                        }
+
+                        // down right
+                        if pos.0 < 7 && pos.1 < 7 {
+                            match checker((pos.0 + 1, pos.1 + 1)) {
+                                piece_match::None => (),
+                                piece_match::Different => moves.push((pos.0 + 1, pos.1 + 1)),
+                                piece_match::Same => (),
+                            }
+                        }
+
+                        // two squares down
+                        if pos.0 == 1 {
+                            match checker((pos.0 + 2, pos.1)) {
+                                piece_match::None => moves.push((pos.0 + 2, pos.1)),
+                                piece_match::Different => (),
+                                piece_match::Same => (),
+                            }
+                        }
+                    }
+                }
+
+                moves
+            }
+        }
+    }
+
+    fn can_move(&self, from: Position, _to: Position) -> Option<bool> {
+        let piece = self[from.0][from.1].clone();
+        match piece {
+            Some(piece) => match piece.piece {
+                Piece::Rook => todo!(),
+                Piece::Knight => todo!(),
+                Piece::Bishop => todo!(),
+                Piece::Queen => todo!(),
+                Piece::King => todo!(),
+                Piece::Pawn => todo!(),
+            },
+            None => None,
+        }
+    }
+
     pub fn move_piece(&mut self, from: Position, to: Position) -> Result<(), Box<dyn Error>> {
         match self[from.0][from.1] {
             Some(_) => {
@@ -235,5 +809,212 @@ mod tests {
             })
         );
         assert_eq!(board[6][1], None);
+    }
+
+    // test `all_moves`function for a rook
+    #[test]
+
+    // use default board but remove the pawns before test
+    fn test_all_moves_rook() {
+        let mut board = Board::default();
+
+        for i in 0..8 {
+            board[1][i] = None;
+            board[6][i] = None;
+        }
+
+        // test rook
+        assert_eq!(
+            board.all_moves((0, 0)),
+            vec![(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)]
+        );
+        assert_eq!(
+            board.all_moves((0, 7)),
+            vec![(1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)]
+        );
+        assert_eq!(
+            board.all_moves((7, 0)),
+            vec![(6, 0), (5, 0), (4, 0), (3, 0), (2, 0), (1, 0), (0, 0)]
+        );
+        assert_eq!(
+            board.all_moves((7, 7)),
+            vec![(6, 7), (5, 7), (4, 7), (3, 7), (2, 7), (1, 7), (0, 7)]
+        );
+    }
+
+    #[test]
+    fn test_all_moves_knight() {
+        let mut board = Board::default();
+
+        // move all knights to the center
+        // test each knights possible moves out of starting position
+
+        // test knight
+        assert_eq!(board.all_moves((0, 1)), vec![(2, 0), (2, 2)]);
+        assert_eq!(board.all_moves((0, 6)), vec![(2, 5), (2, 7)]);
+        assert_eq!(board.all_moves((7, 1)), vec![(5, 0), (5, 2)]);
+        assert_eq!(board.all_moves((7, 6)), vec![(5, 5), (5, 7)]);
+
+        // move knights to the center
+        board.move_piece((0, 1), (4, 4)).unwrap();
+
+        assert_eq!(
+            board.all_moves((4, 4)).sort(),
+            vec![
+                (6, 3),
+                (6, 5),
+                (5, 2),
+                (5, 6),
+                (3, 2),
+                (3, 6),
+                (2, 3),
+                (2, 5)
+            ]
+            .sort()
+        );
+    }
+
+    #[test]
+    fn test_all_moves_bishop() {
+        let mut board = Board::default();
+
+        // test that bishops initially have no valid moves
+        assert_eq!(board.all_moves((0, 2)), vec![]);
+        assert_eq!(board.all_moves((0, 5)), vec![]);
+        assert_eq!(board.all_moves((7, 2)), vec![]);
+        assert_eq!(board.all_moves((7, 5)), vec![]);
+
+        // move one bishop to the center
+        board.move_piece((0, 2), (4, 4)).unwrap();
+
+        // test that centered bishop has valid moves
+        assert_eq!(
+            board.all_moves((4, 4)),
+            vec![
+                (3, 3),
+                (2, 2),
+                (3, 5),
+                (2, 6),
+                (5, 3),
+                (6, 2),
+                (5, 5),
+                (6, 6)
+            ]
+        );
+    }
+
+    #[test]
+    fn test_all_moves_queen() {
+        let mut board = Board::default();
+
+        // test that queens initially have no valid moves
+        assert_eq!(board.all_moves((0, 3)), vec![]);
+        assert_eq!(board.all_moves((7, 3)), vec![]);
+
+        // move one queen to the center
+        board.move_piece((0, 3), (4, 4)).unwrap();
+
+        // test that centered queen has valid moves
+        let mut moves = board.all_moves((4, 4));
+        let mut looking_for_moves = vec![
+            (2, 2),
+            (2, 4),
+            (2, 6),
+            (3, 3),
+            (3, 4),
+            (3, 5),
+            (4, 0),
+            (4, 1),
+            (4, 2),
+            (4, 3),
+            (4, 5),
+            (4, 6),
+            (4, 7),
+            (5, 3),
+            (5, 4),
+            (5, 5),
+            (6, 2),
+            (6, 4),
+            (6, 6),
+        ];
+
+        looking_for_moves.sort();
+        moves.sort();
+
+        assert_eq!(moves, looking_for_moves);
+    }
+
+    #[test]
+    fn test_all_moves_king() {
+        let mut board = Board::default();
+
+        // test that kings initially have no valid moves
+        assert_eq!(board.all_moves((0, 4)), vec![]);
+        assert_eq!(board.all_moves((7, 4)), vec![]);
+
+        // move one king to the center
+        board.move_piece((0, 4), (4, 4)).unwrap();
+
+        // test that centered king has valid moves
+        let mut moves = board.all_moves((4, 4));
+        let mut looking_for_moves = vec![
+            (3, 3),
+            (3, 4),
+            (3, 5),
+            (4, 3),
+            (4, 5),
+            (5, 3),
+            (5, 4),
+            (5, 5),
+        ];
+
+        looking_for_moves.sort();
+        moves.sort();
+
+        assert_eq!(moves, looking_for_moves);
+    }
+
+    #[test]
+    fn test_all_moves_pawn_white() {
+        let board = Board::default();
+
+        // assert that all pawns initially have valid moves
+        for i in 0..8 {
+            assert_eq!(board.all_moves((1, i)), vec![(2, i), (3, i)]);
+        }
+
+        {
+            // move a pawn up by one square and assert it can only move by one square from then on
+            let mut board = Board::default();
+
+            board.move_piece((1, 0), (2, 0)).unwrap();
+            assert_eq!(board.all_moves((2, 0)), vec![(3, 0)]);
+
+            board.move_piece((2, 0), (3, 0)).unwrap();
+            assert_eq!(board.all_moves((3, 0)), vec![(4, 0)]);
+        }
+    }
+
+    #[test]
+    fn test_all_moves_pawn_black() {
+        {
+            let board = Board::default();
+
+            // assert that all black pawns can move
+            for i in 0..8 {
+                assert_eq!(board.all_moves((6, i)), vec![(5, i), (4, i)]);
+            }
+        }
+
+        {
+            // move a pawn down by one square and assert it can only move by one square from then on
+            let mut board = Board::default();
+
+            board.move_piece((6, 0), (5, 0)).unwrap();
+            assert_eq!(board.all_moves((5, 0)), vec![(4, 0)]);
+
+            board.move_piece((5, 0), (4, 0)).unwrap();
+            assert_eq!(board.all_moves((4, 0)), vec![(3, 0)]);
+        }
     }
 }
