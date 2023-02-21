@@ -1,6 +1,8 @@
 <html>
     <head>
         <meta charset="utf-8">
+        <link rel="icon" type="image/x-icon" href="./favicon.ico">
+        <script src="./chess.js"></script>
         <style>
             .container {
                 display: grid;
@@ -10,10 +12,6 @@
             .container div {
                 background-color: red;
                 aspect-ratio: 1;
-            }
-
-            .row {
-                
             }
 
             .even {
@@ -42,6 +40,10 @@
                 left: 4px;
             }
 
+            .nopointer {
+                pointer-events: none;
+            }
+
             .indicator-bottom-right {
                 left: 48px;
                 top: 40px;
@@ -59,155 +61,15 @@
                 top: -4px;
                 position: absolute;
             }
-        </style>        
-        <script>
-            "use strict";
-            
-            class Game {
-                constructor() {
-                    this.dragging = {
-                        active: false,
-                        from: null,
-                        to: null,
-                    };
-                }
 
-                refresh() {
-                    fetch("/board").then(response => response.json()).then(data => this.render_board(data));
-                }
-                
-                start_dragging(pos) {
-                    this.dragging.active = true;
-                    this.dragging.from = pos;
-                }
-                end_dragging(pos) {
-                    this.dragging.active = false;
-                    this.dragging.to = pos;
-                    this.handle_move(this.dragging.from, this.dragging.to);
-                }
-                handle_move(from, to) {
-                    console.log("@", from, to);
-                    fetch("/move", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            from: from,
-                            to: to
-                        })
-                    }).then(response => {
-                        this.refresh();
-                        console.log(response);
-                    })
-                }
+            .active_box {
+                background: #f00;
+            }
 
-                render_board(data) {
-                    console.log('render...');
-                    for (let i = 0; i < 8; i++) {
-                        for (let j = 0; j < 8; j++) {
-                            let element = data[i][j];
-                            let box = document.getElementsByClassName("box")[i * 8 + j];
-                            let elem = box.getElementsByClassName('figure')[0];
-                            if (element != null) {
-                                let kind = element['kind'].toLowerCase();
-                                let piece = element['piece'].toLowerCase();
-                                elem.innerHTML = pieces[kind][piece];
-                            } else {
-                                elem.innerHTML = '';
-                            }
-                        }
-                    }
-                }
-            };
-
-            let game = new Game();
-            
-            // make a multiplication table out of table element with js
-        
-            const ascii_pieces = ['♖','♘','♗','♕','♔','♙','♜','♞','♝','♛','♚','♟'];
-            const pieces = {
-                "white": {
-                    "rook": ascii_pieces[0],
-                    "knight": ascii_pieces[1],
-                    "bishop": ascii_pieces[2],
-                    "queen": ascii_pieces[3],
-                    "king": ascii_pieces[4],
-                    "pawn": ascii_pieces[5]
-                },
-                "black": {
-                    "rook": ascii_pieces[6],
-                    "knight": ascii_pieces[7],
-                    "bishop": ascii_pieces[8],
-                    "queen": ascii_pieces[9],
-                    "king": ascii_pieces[10],
-                    "pawn": ascii_pieces[11]
-                }
-            };
-
-            
-            document.addEventListener('DOMContentLoaded', (event) => {
-                const template = `
-                    <div draggable="true" class="box {color}" data-pos="{pos}">
-                        <div class="indicator-top-left">{indicator-top-left}</div>
-                        <div class="indicator-bottom-right">{indicator-bottom-right}</div>
-                        <div class="figure">{figure}</div>                        
-                    </div>
-                `;
-
-                let board = document.getElementById("board");
-                let html = [];
-                for (let i = 0; i < 8; i++) {
-                    html.push('<div class="row">');
-                    for (let j = 0; j < 8; j++) {
-                        let indicator_top_left = '';
-                        let indicator_bottom_right = '';
-                        if (j == 0) {
-                            indicator_top_left = (8-i);
-                        }
-                        
-                        if (i == 7) {
-                            indicator_bottom_right = String.fromCharCode(97+j-0);
-                        }
-                        const color = (i+j) % 2 == 0 ? 'even': 'odd';
-                        const figure = '';
-                        const pos = `${String.fromCharCode(97+j-0)}${8-i}`;
-
-                        html.push(template
-                            .replace('{color}', color)
-                            .replace('{indicator-top-left}', indicator_top_left)
-                            .replace('{indicator-bottom-right}', indicator_bottom_right)
-                            .replace('{figure}', figure)
-                            .replace('{pos}', pos)
-                            );
-                    }
-                    html.push('</div>');
-                }
-
-                board.innerHTML = html.join(" ");
-
-                let elements = document.getElementsByClassName('box');
-                for (let i in elements) {
-                    let element = elements.item(i);                    
-                    element.addEventListener('dragstart', (event) => {
-                        game.start_dragging(event.target.dataset.pos);
-                    });
-
-                    element.addEventListener('dragover', (event) => {
-                        event.preventDefault();
-                    });
-
-                    element.addEventListener('drop', (event) => {
-                        event.preventDefault();                    
-                        game.end_dragging(event.target.dataset.pos);                        
-                    });
-
-                }
-
-                game.refresh();
-            });
-        
-        </script>
+            .valid_move {
+                background: #0f0;
+            }
+        </style>                
     </head>
     <body>
         <div id="board">
