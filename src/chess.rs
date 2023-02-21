@@ -1,13 +1,12 @@
 use core::fmt;
 
-use serde::Serialize;
 use std::{
     error::Error,
     ops::{Deref, DerefMut},
 };
 
 // TODO: instead of option make it an enum of Piece
-#[derive(Clone, Debug, Serialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Piece {
     Rook,
     Knight,
@@ -17,13 +16,13 @@ pub enum Piece {
     Pawn,
 }
 
-#[derive(Clone, Debug, Serialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Kind {
     White,
     Black,
 }
 
-#[derive(Clone, Debug, Serialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Pair {
     pub kind: Kind,
     pub piece: Piece,
@@ -58,9 +57,14 @@ impl fmt::Display for Pair {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct Board([[Option<Pair>; 8]; 8]);
 
+impl Board {
+    pub fn from_data(data: [[Option<Pair>; 8]; 8]) -> Board {
+        Board { 0: data }
+    }
+}
 // TODO: Option is not great in board state
 impl Deref for Board {
     type Target = [[Option<Pair>; 8]; 8];
@@ -96,7 +100,7 @@ impl Board {
     }
 
     // get all valid moves for a piece
-    fn all_moves(&self, pos: Position) -> Vec<Position> {
+    pub fn all_moves(&self, pos: Position) -> Vec<Position> {
         let pair = self[pos.0][pos.1].clone().expect("Piece must be present");
 
         enum piece_match {
@@ -651,21 +655,6 @@ impl Board {
 
                 moves
             }
-        }
-    }
-
-    fn can_move(&self, from: Position, _to: Position) -> Option<bool> {
-        let piece = self[from.0][from.1].clone();
-        match piece {
-            Some(piece) => match piece.piece {
-                Piece::Rook => todo!(),
-                Piece::Knight => todo!(),
-                Piece::Bishop => todo!(),
-                Piece::Queen => todo!(),
-                Piece::King => todo!(),
-                Piece::Pawn => todo!(),
-            },
-            None => None,
         }
     }
 

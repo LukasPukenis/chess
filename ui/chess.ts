@@ -1,21 +1,25 @@
 "use strict";
     
-class BoardElement {
-    kind: string;
+class API_BoardElement {
+    color: string;
     piece: string;
 
-    constructor(kind: string, piece: string) {
-        this.kind = kind;
+    constructor(color: string, piece: string) {
+        this.color = color;
         this.piece = piece;
     }
 }
 
+interface RenderBoard {
+    [pos: string]: RenderElement;
+}
+
 class RenderElement {
-    figure: BoardElement | null;
+    figure: API_BoardElement | null;
     selected: boolean;
     possible: boolean;
 
-    constructor(figure: BoardElement | null, selected: boolean, possible: boolean) {
+    constructor(figure: API_BoardElement | null, selected: boolean, possible: boolean) {
         this.figure = figure;
         this.selected = selected;
         this.possible = possible;
@@ -41,7 +45,7 @@ class SelectedState extends State {
 
     constructor(active: string, possible_moves: string[]) {
         super();
-        this.active = active;
+        this.active = active; // TODO
         this.possible_moves = possible_moves;
     }
 }
@@ -52,10 +56,13 @@ class IdleState extends State{
     }
 }
 
+interface API_Board {
+    [key: string]: API_BoardElement;
+}
+
 class Game {
     state: State;
-    board: RenderElement[][] = [];
-
+    
     constructor() {
         this.state = new IdleState();
     }
@@ -65,51 +72,48 @@ class Game {
         this._refresh();
     }
     
-    setBoard(board: (BoardElement | null)[][]) {        
+    setBoard(board: API_Board) {        
         // transform board into internal representation
-        this.board = [];
-        for (let i = 0; i < 8; i++) {
-            this.board.push([]);
+        
+        let render_board: RenderBoard = {};
+        for (let i = 1; i < 9; i++ ) {
             for (let j = 0; j < 8; j++) {
-                let element = board[i][j];
-                if (element != null) {
+                // map j to ascii
+                let char = String.fromCharCode(j+97);
+                let pos: string = char+i;
+
+                let selected = false;
+                let possible = false;
+                
+                // TODO: checking `this.state` doesnt work 
+                switch (this.state.constructor.name) {
+                    case "IdleState":        
+                        break;
+                    case "SelectedState":
+                        selected = this.state.active == pos;
+                        possible = this.state.possible_moves.find(p => p == pos);
+                        break;
+                    case "DraggingState":
+                        selected = this.state.active == pos;
+                        possible = this.state.possible_moves.find(p => p == pos);
+                        break;                            
+                }                    
+
+                let element = board[pos];
+                if (element) {                                        
+                    let color = element.color;
+                    let piece = element.piece;
                     
-                    let selected = false;
-                    let possible = false;
-
-                    // TODO: checking `this.state` doesnt work 
-                    switch (this.state.constructor.name) {
-                        case "IdleState":        
-                            break;
-                        case "SelectedState":
-                            selected = (this.state.active[0] == i && this.state.active[1] == j);
-                            console.log(this.state.active[0], this.state.active[1], i, j, element);
-                            possible = this.state.possible_moves.find(x => x[0] == i && x[1] == j)
-                            break;
-                        case "DraggingState":
-                            selected = (this.state.active[0] == i && this.state.active[1] == j);
-                            possible = this.state.possible_moves.find(x => x[0] == i && x[1] == j)
-                            break;                            
-                    }                    
-
-                    
-                    this.board[i].push(
-                        new RenderElement(new BoardElement(
-                            element['kind'],
-                            element['piece']
-                        ),
-                        selected,
-                        possible
-                        )
-                    );
-
+                    render_board[pos] = new RenderElement(new API_BoardElement(
+                        color, piece
+                    ), selected, possible);
                 } else {
-                    this.board[i].push(new RenderElement(null, false, false));
+                    render_board[pos] = new RenderElement(null, selected, possible);
                 }
             }
         }
-        
-        this.renderBoard(this.board);
+
+        this.renderBoard(render_board);
     }
 
     run() {
@@ -123,9 +127,7 @@ class Game {
     }
     
     select(pos: string) {
-        fetch(`/possible/${pos}`).then(response => response.json()).then(data => {
-            console.log(data);
-            
+        fetch(`/moves/${pos}`).then(response => response.json()).then(data => {            
             this.state
             this._refresh();
 
@@ -161,39 +163,40 @@ class Game {
             })
         }).then(response => {
             this._refresh();
-            console.log(response);
         })
     }
     
-    private renderBoard(elements: RenderElement[][]) {
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
-                let element = elements[i][j];
-                let box = document.getElementsByClassName("box")[i * 8 + j];
-                let elem = box.getElementsByClassName('figure')[0];
-
-                if (element.figure != null) {
-                    let kind = element.figure['kind'].toLowerCase();
-                    let piece = element.figure['piece'].toLowerCase();
-                    elem.innerHTML = pieces[kind][piece];
-                    
-                    if (element.selected) {
-                        box.classList.add('selected');
-                    }
-
-                    if (element.possible) {
-                        console.log('possible');
-                        box.classList.add('possible');
-                    }
-
-                    if (element.selected && element.possible) {
-                        throw new Error("Selected and possible can't be true at the same time");
-                    }
-                } else {
-                    elem.innerHTML = '';
-                }
+    private renderBoard(board: RenderBoard) {
+        let boxes = document.getElementsByClassName("box");
+        for (let i = 0; i < boxes.length; i++) {
+            let box = boxes.item(i);
+            // reset
+            box?.classList.remove('selected');
+            box?.classList.remove('possible');
+            // @ts-ignore
+            box?.getElementsByClassName("figure")[0].innerHTML = '';
+            
+            // @ts-ignore
+            let box_pos = box.dataset.pos;            
+            let item = board[box_pos];
+            
+            if (item.figure != null) {
+                let fig = item.figure;
+                // @ts-ignore
+                box?.getElementsByClassName("figure")[0].innerHTML = pieces[fig.color.toLowerCase()][fig.piece.toLowerCase()];
             }
-        }
+
+            if (item.selected) {
+                box?.classList.add('selected');
+            }
+
+            if (item.possible) {
+                box?.classList.add('possible');
+            }            
+
+            // console.assert(!(item.selected && item.possible));
+
+        }                    
     }
 };
 
