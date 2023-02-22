@@ -2,17 +2,10 @@ use chess::Board;
 mod api;
 mod chess;
 
-use serde::Deserialize;
 use std::sync::{Arc, Mutex};
-
-#[derive(Deserialize, Debug)]
-// a1, h8, etc
-struct RequestMove {
-    from: String,
-    to: String,
-}
-
 use warp::Filter;
+
+use crate::api::RequestMove;
 
 #[tokio::main]
 async fn main() {
@@ -67,7 +60,9 @@ async fn main() {
                 (row, col)
             };
 
-            board.move_piece(convpos(&r.from), convpos(&r.to)).unwrap();
+            board
+                .move_piece(convpos(&r.from()), convpos(&r.to()))
+                .unwrap();
             warp::reply::reply()
         });
 
