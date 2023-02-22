@@ -113,6 +113,17 @@ class Game {
         });
     }
     
+    clicked(pos: string) {
+        if (this.state instanceof SelectedState) {
+            this.handle_move(this.state.active, pos);
+            this.state = new IdleState();
+        } else {
+            // select
+
+            this.select(pos);
+        }
+    }
+
     select(pos: string) {
         fetch(`/moves/${pos}`).then(response => response.json()).then(data => {            
             this.state
@@ -245,7 +256,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         element.addEventListener('click', (event) => {
             // @ts-ignore
-            game.select(event.target!.dataset.pos);
+            game.clicked(event.target!.dataset.pos);
         });
     }
 
