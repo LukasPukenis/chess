@@ -30,15 +30,6 @@ class State {
 
 };
 
-class DraggingState extends State {
-    from: string;
-
-    constructor(from: string) {
-        super();
-        this.from = from;
-    }
-}
-
 class SelectedState extends State {
     active: string;
     possible_moves: string[];
@@ -92,11 +83,7 @@ class Game {
                     case "SelectedState":
                         selected = this.state.active == pos;
                         possible = this.state.possible_moves.find(p => p == pos);
-                        break;
-                    case "DraggingState":
-                        selected = this.state.active == pos;
-                        possible = this.state.possible_moves.find(p => p == pos);
-                        break;                            
+                        break;                    
                 }                    
 
                 let element = board[pos];
@@ -135,22 +122,7 @@ class Game {
             this.setState(new SelectedState(pos, moves));
         });            
     }
-
-    start_dragging(pos: string) {
-        this.setState(new DraggingState(pos));
-    }
-
-    end_dragging(pos: string) {
-        if (this.state instanceof DraggingState) {
-
-        } else {
-            throw new Error("Invalid state");
-        }
-
-        this.handle_move(this.state.from, pos);
-        this.setState(new IdleState());
-    }
-
+    
     handle_move(from: string, to: string) {
         fetch("/move", {
             method: 'POST',
@@ -227,7 +199,7 @@ const pieces: any = {
 
 document.addEventListener('DOMContentLoaded', (event) => {
     const template = `
-        <div draggable="true" class="box {color}" data-pos="{pos}">
+        <div class="box {color}" data-pos="{pos}">
             <div class="nopointer">
                 <div class="indicator-top-left">{indicator-top-left}</div>
                 <div class="indicator-bottom-right">{indicator-bottom-right}</div>
@@ -275,22 +247,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             // @ts-ignore
             game.select(event.target!.dataset.pos);
         });
-        
-        element.addEventListener('dragstart', (event) => {
-            // @ts-ignore
-            game.start_dragging(event.target!.dataset.pos);
-        });
-
-        element.addEventListener('dragover', (event) => {
-            event.preventDefault();
-        });
-
-        element.addEventListener('drop', (event) => {
-            event.preventDefault();                    
-            // @ts-ignore
-            game.end_dragging(event.target.dataset.pos);                        
-        });
-
     }
 
 
