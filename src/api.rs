@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 use serde::Serialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 // a1, h8, etc
 pub struct RequestMove {
     from: String,

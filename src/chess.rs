@@ -1,7 +1,7 @@
 use core::fmt;
 
+use anyhow::anyhow;
 use std::{
-    error::Error,
     ops::{Deref, DerefMut},
 };
 
@@ -658,7 +658,12 @@ impl Board {
         }
     }
 
-    pub fn move_piece(&mut self, from: Position, to: Position) -> Result<(), Box<dyn Error>> {
+    pub fn move_piece(&mut self, from: Position, to: Position) -> Result<(), anyhow::Error> {
+        let moves = self.all_moves(from);
+        if moves.iter().find(|&&x| x == to).is_none() {
+            return Err(anyhow!("Invalid move"));
+        }
+
         match self[from.0][from.1] {
             Some(_) => {
                 self[to.0][to.1] = self[from.0][from.1].clone();
